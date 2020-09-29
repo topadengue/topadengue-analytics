@@ -152,3 +152,31 @@ Visualization_and_modeling_patterns_R/.Rhistory
 *.tex
 
 *.gif
+
+*.ini
+
+MaxEnt/
+
+R_ANOVA/.RData
+
+*.gdoc
+
+R_ANOVA/.Rhistory
+
+*.gsheet
+
+Tidy and transform data for the analysis/.Rhistory
+
+Visualization_and_modeling_patterns_R/.RData (1)
+
+ML_R/.Rhistory
+
+ML_R/.RData
+
+*.rda
+
+Visualization_and_modeling_patterns_R/.Rhistory (1)
+
+Visualization_and_modeling_patterns_R/preliminar/.RData
+
+Visualization_and_modeling_patterns_R/preliminar/.Rhistory
