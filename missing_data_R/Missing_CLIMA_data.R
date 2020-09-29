@@ -41,11 +41,24 @@ if (!require('simputation')) install.packages('simputation')
 library(simputation)
 if (!require('plotly')) install.packages('plotly')
 library(plotly)
-if (!require('RVAideMemoire')) install.packages("RVAideMemoire")
-library(RVAideMemoire)
 
-if (!require('DescTools')) install.packages("DescTools")
-library(DescTools)
+#if (!require('RVAideMemoire')) install.packages("RVAideMemoire")
+#library(RVAideMemoire)
+
+#if (!require('DescTools')) install.packages("DescTools")
+#library(DescTools)
+
+if (!require('Amelia')) install.packages("Amelia")
+library(Amelia)
+
+if (!require('mice')) install.packages("mice")
+library(mice)
+
+if (!require('mice')) install.packages("mice")
+library(mice)
+
+if (!require('lattice')) install.packages("lattice")
+library(lattice)
 
 
 
@@ -54,7 +67,7 @@ library(DescTools)
 # datos en formato csv con encabezado y separadores ; para las columnas 
 
 
-clima       =  read.table("Climate_Asuncion_Aeropuerto.csv",header=T, sep=";",dec=".") 
+Clima       =  read.table("Climate_Asuncion_Aeropuerto.csv",header=T, sep=";",dec=".") 
 
 
 # Verificamos si los datos estan codificados correctamente con la funcion ff_glimpse
@@ -79,11 +92,13 @@ Clima$TS=as.factor(Clima$TS)
 
 Clima$TR=as.factor(Clima$TR)
 
-Clima$D=as.factor(Clima$D)
+Clima$FG=as.factor(Clima$FG)
 
-Clima$M=as.factor(Clima$M)
+#Clima$D=as.factor(Clima$D)
 
-Clima$Y=as.factor(Clima$Y)
+#Clima$M=as.factor(Clima$M)
+
+#Clima$Y=as.factor(Clima$Y)
 
 summary(Clima)
 
@@ -138,3 +153,114 @@ dev.off()
 png('Clima cont visualisation missing data matrix.png', width=40, height=30, units = 'cm', res = 500)
 Clima[,10:21] %>%  missing_pairs()
 dev.off()
+
+# Let's start out by getting a high level view of what data is missing.
+
+missmap(Clima, col=c('grey', 'steelblue'), y.cex=0.5, x.cex=0.8)
+
+#Save the figure in the working directory nominal resolution  (res) in ppi 300
+png('Clima high level view of what data is missing.png', width=40, height=30, units = 'cm', res = 500)
+missmap(Clima, col=c('grey', 'steelblue'), y.cex=0.5, x.cex=0.8)
+dev.off()
+
+# # Let's also get some hard numbers
+
+
+sort(sapply(Clima, function(x) { sum(is.na(x)) }), decreasing=TRUE)
+
+# Porcentaje de datos perdidos 
+
+sort(sapply(Clima, function(x) {(sum(is.na(x))/dim(Clima)[1])*100}), decreasing=TRUE)
+
+?sapply
+
+# Excluir variables alto porcentaje de datos perdidos 
+
+exclude <- 'VG'
+
+include <- setdiff(names(Clima), exclude)
+
+include
+
+Clima=Clima[include] 
+
+# Imputación de datos 
+#http://juliejosse.com/wp-content/uploads/2018/06/DataAnalysisMissingR.html
+# https://www.kaggle.com/captcalculator/imputing-missing-data-with-the-mice-package-in-r
+# https://web.maths.unsw.edu.au/~dwarton/missingDataLab.html
+# http://www.di.fc.ul.pt/~jpn/r/missing/index.html
+# https://datascienceplus.com/imputing-missing-data-with-r-mice-package/
+#https://datascienceplus.com/graphical-presentation-of-missing-data-vim-package/
+
+names(Clima2)
+
+
+Clima2=subset(Clima, select = -c(ï..id_date, weather_station,	lat,	long,	altitude, date))
+
+sapply(Clima2, class)  # check again the types of each predictor
+
+imp.clima2 <- mice(Clima2, m=10, maxit = 50, method='cart', seed=99, diag=FALSE, print=TRUE)
+
+
+summary(imp.clima2)
+
+dev.off()
+
+# It allows us to easily visualize the imputed vs actual data
+
+xyplot(imp.clima2, Tm ~ T)
+
+xyplot(imp.clima2, TM ~ T)
+
+xyplot(imp.clima2, H ~ VV)
+
+xyplot(imp.clima2, H ~ PP)
+
+xyplot(imp.clima2, V ~ VM)
+
+
+dev.off()
+
+#https://stefvanbuuren.name/mice/reference/densityplot.mids.html
+
+
+## To detect interesting differences between observed and imputed data
+
+densityplot(imp.clima2, ~T+TM+Tm+SLP+H+PP+VV+V+VM)
+
+stripplot(imp.clima2, pch = 20, cex = 1)
+
+# Checking Convergence
+
+names(Clima2)
+
+plot(imp.clima2, c("VV", "V","VM"))
+
+plot(imp.clima2, c("SLP","H","PP"))
+
+plot(imp.clima2, c("T","TM","Tm"))
+
+plot(imp.clima2, c("T","TM","Tm","SLP","H","PP","VV", "V","VM"), 
+     theme = mice.theme(), layout = c(2,9), type = "l", col = 1:10, lty = 1)
+
+
+  
+
+# Creating a Complete Dataset
+
+Clima3 <- mice::complete(imp.clima2)
+
+
+
+
+head(Clima3$TS)
+
+# Let's start out by getting a high level view of what data is missing.
+
+missmap(Clima3, col=c('grey', 'steelblue'), y.cex=0.5, x.cex=0.8)
+
+missmap(Clima2, col=c('grey', 'steelblue'), y.cex=0.5, x.cex=0.8)
+
+write.csv(Clima3, file="impClima.csv")
+
+
